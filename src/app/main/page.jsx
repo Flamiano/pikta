@@ -29,20 +29,17 @@ const Page = () => {
     const newFacingMode = facingMode === "user" ? "environment" : "user";
     setFacingMode(newFacingMode);
 
-    // Restart stream
     navigator.mediaDevices
       .getUserMedia({
         video: { facingMode: newFacingMode },
-        audio: false,
       })
-      .then((stream) => {
+      .then((newStream) => {
         if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+          videoRef.current.srcObject = newStream;
         }
+        setStream(newStream); // if you're tracking the stream
       })
-      .catch((err) => {
-        console.error("Error flipping camera:", err);
-      });
+      .catch((err) => console.error("Camera flip error:", err));
   };
 
   useEffect(() => {
@@ -240,7 +237,9 @@ const Page = () => {
                     images.length >= pictureCount
                       ? "border-green-500"
                       : "border-gray-300"
-                  } ${videoStyles[selectedEffect]} -scale-x-100`}
+                  } ${videoStyles[selectedEffect]} ${
+                    facingMode === "user" ? "-scale-x-100" : ""
+                  }`}
                 />
 
                 {/* Flip Camera Button */}
