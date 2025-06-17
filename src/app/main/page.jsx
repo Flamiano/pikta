@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 
 import "../globals.css";
-import domtoimage from "dom-to-image";
+//import domtoimage from "dom-to-image";
+import { toPng } from "html-to-image";
 import { motion } from "framer-motion";
 
 const Page = () => {
@@ -213,16 +214,21 @@ const Page = () => {
   const handleDownload = () => {
     if (!photoStripRef.current) return;
 
-    domtoimage
-      .toPng(photoStripRef.current)
+    toPng(photoStripRef.current, {
+      cacheBust: true,
+      filter: (node) => {
+        // You can skip elements with unsafe styles
+        return true;
+      },
+    })
       .then((dataUrl) => {
         const link = document.createElement("a");
         link.download = "PikTà.png";
         link.href = dataUrl;
         link.click();
       })
-      .catch((error) => {
-        console.error("Error generating image:", error);
+      .catch((err) => {
+        console.error("Image generation error:", err);
       });
   };
 
@@ -809,68 +815,94 @@ const Page = () => {
 
               <div
                 ref={photoStripRef}
-                className={`relative overflow-hidden ${frameStyle}`}
                 style={{
                   border: `8px solid ${frameColor}`,
                   backgroundColor: frameColor,
-                  padding: "16px",
+                  padding: 16,
                   width: "fit-content",
                   maxWidth: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  fontFamily: "'Poppins', sans-serif",
                 }}
+                className={frameStyle}
               >
                 {/* PikTa Label */}
-                <div className="flex justify-center mb-4">
-                  <div className="w-16 h-5 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-md">
-                    <div
-                      style={{
-                        color: "#10b981",
-                        fontSize: "0.875rem",
-                        fontWeight: "800",
-                        letterSpacing: "0.05em",
-                        lineHeight: "1rem",
-                        textAlign: "center",
-                      }}
-                    >
-                      <span style={{ color: "#10b981" }}>P</span>
-                      <span style={{ color: "#1f2937" }}>ik</span>
-                      <span style={{ color: "#10b981" }}>T</span>
-                      <span style={{ color: "#1f2937" }}>à</span>
-                    </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    width: 64,
+                    height: 20,
+                    backgroundColor: "white",
+                    borderRadius: 9999,
+                    border: "4px solid white",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                    marginBottom: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      fontSize: 12,
+                      color: "#10b981",
+                    }}
+                  >
+                    <span style={{ color: "#10b981" }}>P</span>
+                    <span style={{ color: "#1f2937" }}>ik</span>
+                    <span style={{ color: "#10b981" }}>T</span>
+                    <span style={{ color: "#1f2937" }}>à</span>
                   </div>
                 </div>
 
-                {/* Images */}
+                {/* Image Grid */}
                 <div
-                  className="grid grid-cols-2 gap-2 justify-center items-center"
                   style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 8,
+                    maxWidth: 300,
                     width: "100%",
-                    maxWidth: "300px",
-                    margin: "auto",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    borderRadius: frameStyle.includes("rounded")
+                      ? "0px"
+                      : "0px",
+                    overflow: "hidden",
                   }}
                 >
                   {images.map((img, index) => (
                     <img
-                      crossOrigin="anonymous"
                       key={index}
                       src={img.src}
                       alt={`Photo ${index + 1}`}
-                      className="w-full h-auto object-cover border border-white"
+                      crossOrigin="anonymous"
                       style={{
+                        width: "100%",
+                        maxHeight: 150,
+                        objectFit: "cover",
+                        border: "2px solid white",
                         borderRadius: "0px",
-                        maxHeight: "150px",
                       }}
                     />
                   ))}
                 </div>
 
-                {/* Bottom Message */}
-                <div className="text-white text-center text-xs py-3 space-y-1">
+                {/* Message and Date */}
+                <div
+                  style={{
+                    color: "white",
+                    textAlign: "center",
+                    fontSize: 8,
+                    paddingTop: 12,
+                    fontFamily: "'Poppins', sans-serif",
+                    minHeight: 30,
+                  }}
+                >
                   {showMessage && <div>{customMessage}</div>}
-                  {showDate && (
-                    <div className="text-xs font-medium">
-                      {new Date().toLocaleDateString()}
-                    </div>
-                  )}
+                  {showDate && <div>{new Date().toLocaleDateString()}</div>}
                 </div>
               </div>
             </div>
