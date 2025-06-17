@@ -215,7 +215,7 @@ const Page = () => {
     if (!photoStripRef.current) return;
 
     const node = photoStripRef.current;
-    const scale = 2; // or 3 for higher quality (but 2 is safer for iOS)
+    const scale = 2;
 
     toPng(node, {
       cacheBust: true,
@@ -230,22 +230,33 @@ const Page = () => {
       filter: (node) => true,
     })
       .then((dataUrl) => {
-        const link = document.createElement("a");
-        link.download = "PikTà.png";
-        link.href = dataUrl;
+        const isSafari = /^((?!chrome|android).)*safari/i.test(
+          navigator.userAgent
+        );
 
-        // iOS Safari fallback
-        if (
-          navigator.userAgent.includes("Safari") &&
-          !navigator.userAgent.includes("Chrome")
-        ) {
-          window.open(dataUrl, "_blank");
+        if (isSafari) {
+          // Create a new tab or force download fallback
+          const newWindow = window.open();
+          if (newWindow) {
+            newWindow.document.write(
+              `<img src="${dataUrl}" style="width:100%;" />`
+            );
+          } else {
+            alert("Please allow pop-ups to download your photo.");
+          }
         } else {
+          // For Chrome, Android, Edge, etc.
+          const link = document.createElement("a");
+          link.href = dataUrl;
+          link.download = "PikTà.png";
+          document.body.appendChild(link);
           link.click();
+          document.body.removeChild(link);
         }
       })
       .catch((err) => {
-        console.error("Image generation error:", err);
+        console.error("Download failed:", err);
+        alert("Failed to generate image. Please try again.");
       });
   };
 
