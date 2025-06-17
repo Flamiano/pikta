@@ -15,7 +15,7 @@ import {
 
 import "../globals.css";
 //import domtoimage from "dom-to-image";
-import { toPng, toCanvas } from "html-to-image";
+import { toPng } from "html-to-image";
 import { motion } from "framer-motion";
 
 const Page = () => {
@@ -211,50 +211,54 @@ const Page = () => {
   };
 
   // Download handler
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (!photoStripRef.current) return;
 
-    try {
-      // Render to canvas
-      const canvas = await toCanvas(photoStripRef.current, {
-        cacheBust: true,
-        filter: (node) => true,
-        style: {
-          transform: "scale(1)",
-          transformOrigin: "top left",
-        },
-        // We'll manually scale for quality
-        width: photoStripRef.current.offsetWidth * 2,
-        height: photoStripRef.current.offsetHeight * 2,
+    const node = photoStripRef.current;
+    const scale = 2; // Safest upscale factor for iOS + Android
+
+    toPng(node, {
+      cacheBust: true,
+      width: node.offsetWidth * scale,
+      height: node.offsetHeight * scale,
+      style: {
+        transform: `scale(${scale})`,
+        transformOrigin: "top left",
+        width: `${node.offsetWidth}px`,
+        height: `${node.offsetHeight}px`,
+      },
+      filter: () => true,
+    })
+      .then((dataUrl) => {
+        const fileName = "PikTà.png";
+
+        // iOS Safari download workaround
+        const isIOS =
+          /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        if (isIOS) {
+          // Open in new tab for user to long-press & save
+          const newWindow = window.open();
+          if (newWindow) {
+            newWindow.document.write(
+              `<img src="${dataUrl}" alt="PikTà" style="width:100%;"/>`
+            );
+          } else {
+            alert("Please allow popups for this site to download your photo.");
+          }
+        } else {
+          // For Android and other browsers
+          const link = document.createElement("a");
+          link.download = fileName;
+          link.href = dataUrl;
+          link.click();
+        }
+      })
+      .catch((err) => {
+        console.error("Image generation error:", err);
       });
-
-      // Set proper size for HD
-      const context = canvas.getContext("2d");
-      if (context) {
-        context.scale(2, 2); // upscale drawing to retina
-      }
-
-      // Convert canvas to image
-      const dataUrl = canvas.toDataURL("image/png", 1.0);
-
-      // Trigger download
-      const link = document.createElement("a");
-      link.download = "PikTà.png";
-      link.href = dataUrl;
-
-      // For iOS Safari (doesn't support programmatic click reliably)
-      if (
-        navigator.userAgent.includes("Safari") &&
-        !navigator.userAgent.includes("Chrome")
-      ) {
-        window.open(dataUrl, "_blank");
-      } else {
-        link.click();
-      }
-    } catch (err) {
-      console.error("Image generation failed:", err);
-    }
   };
+
   // Animations
   const fadeUp = {
     hidden: { opacity: 0, y: 30 },
