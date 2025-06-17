@@ -79,58 +79,64 @@ export default function FAQPage() {
               Frequently Asked Questions
             </h2>
             <div className="space-y-4">
-              {faqs.map((faq, index) => (
-                <div
-                  key={index}
-                  className={`border rounded-xl transition-all duration-300 overflow-hidden ${
-                    activeIndex === index
-                      ? "border-emerald-400 shadow-md"
-                      : "border-gray-200 hover:border-emerald-200"
-                  }`}
-                >
-                  <button
-                    onClick={() => toggleAccordion(index)}
-                    className={`flex justify-between items-center w-full p-5 text-left ${
-                      activeIndex === index ? "bg-emerald-50" : "bg-white"
+              {faqs.map((faq, index) => {
+                const isActive = activeIndex === index;
+
+                return (
+                  <div
+                    key={index}
+                    className={`border rounded-xl transition-all duration-200 overflow-hidden ${
+                      isActive
+                        ? "border-emerald-400 shadow-md"
+                        : "border-gray-200 hover:border-emerald-200"
                     }`}
                   >
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      {faq.question}
-                    </h3>
-                    <svg
-                      className={`w-5 h-5 transition-transform duration-300 ${
-                        activeIndex === index
-                          ? "rotate-180 text-emerald-600"
-                          : "text-gray-400"
-                      }`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
+                    <button
+                      onClick={() => toggleAccordion(index)}
+                      className={`flex justify-between items-center w-full p-5 text-left ${
+                        isActive ? "bg-emerald-50" : "bg-white"
+                      } cursor-pointer`}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {activeIndex === index && (
-                      <motion.div
-                        key="content"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="px-5 pb-5 text-gray-600 overflow-hidden"
+                      <h3 className="text-lg font-semibold text-gray-800">
+                        {faq.question}
+                      </h3>
+                      <svg
+                        className={`w-5 h-5 transform transition-transform duration-200 ${
+                          isActive
+                            ? "rotate-180 text-emerald-600"
+                            : "text-gray-400"
+                        }`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
                       >
-                        <p>{faq.answer}</p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ))}
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+
+                    {/* Only render content when active to avoid layout jump */}
+                    <AnimatePresence initial={false}>
+                      {isActive && (
+                        <motion.div
+                          key="content"
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          transition={{ duration: 0.2 }}
+                          className="px-5 pb-5 text-gray-600"
+                        >
+                          <p>{faq.answer}</p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </motion.div>

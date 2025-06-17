@@ -8,15 +8,21 @@ import { usePathname } from "next/navigation";
 
 export const HomeNavbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-
+  const menuRef = useRef(null);
   const pathname = usePathname();
+
   const isDarkPage = [
     "/pages/about",
     "/pages/motivation",
     "/pages/faqs",
   ].includes(pathname);
 
-  const menuRef = useRef(null); // for navbar
+  // Toggle menu open/close
+  const toggleMenu = () => {
+    setMenuOpen((prev) => !prev);
+  };
+
+  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -26,8 +32,6 @@ export const HomeNavbar = () => {
 
     if (menuOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
@@ -43,10 +47,6 @@ export const HomeNavbar = () => {
   const fadeRight = {
     hidden: { opacity: 0, x: 50 },
     visible: { opacity: 1, x: 0, transition: { duration: 0.8 } },
-  };
-
-  const toggleMenu = () => {
-    setMenuOpen((prev) => !prev);
   };
 
   return (
@@ -72,12 +72,10 @@ export const HomeNavbar = () => {
           {/* Camera Icon Menu Trigger */}
           <motion.div
             variants={fadeRight}
-            initial="hidden"
-            animate="visible"
             onClick={toggleMenu}
             className="cursor-pointer px-4 py-2 border border-emerald-500 bg-white rounded-full text-emerald-700 flex items-center gap-2 font-medium 
-                        transition-all duration-300 ease-in-out
-                        hover:bg-emerald-500 hover:text-white hover:shadow-lg hover:scale-105"
+              transition-all duration-300 ease-in-out
+              hover:bg-emerald-500 hover:text-white hover:shadow-lg hover:scale-105"
           >
             <FaCameraRetro size={20} />
             Menu
@@ -91,11 +89,11 @@ export const HomeNavbar = () => {
           <motion.aside
             ref={menuRef}
             key="menu"
-            initial={{ x: "100%", opacity: 0 }}
+            initial={{ x: 220, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: "100%", opacity: 0 }}
-            transition={{ type: "tween", duration: 0.35 }}
-            className="fixed top-20 right-0 w-52 bg-white shadow-lg rounded-l-3xl p-6 z-40 flex flex-col gap-4"
+            exit={{ x: 220, opacity: 0 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            className="fixed top-20 right-0 w-52 bg-white shadow-lg rounded-l-3xl p-6 z-40 flex flex-col gap-4 will-change-transform"
           >
             <h2 className="text-lg font-extrabold text-emerald-700 mb-2">
               Navigate
@@ -104,7 +102,7 @@ export const HomeNavbar = () => {
             <Link
               href="/"
               onClick={() => setMenuOpen(false)}
-              className={`text-md transition-colors duration-500 ease-in-out ${
+              className={`text-md transition-colors duration-300 ease-in-out cursor-pointer ${
                 pathname === "/"
                   ? "text-emerald-700 font-bold"
                   : "text-gray-700 hover:text-emerald-700"
@@ -116,7 +114,7 @@ export const HomeNavbar = () => {
             <Link
               href="/pages/about"
               onClick={() => setMenuOpen(false)}
-              className={`text-md transition-colors duration-500 ease-in-out ${
+              className={`text-md transition-colors duration-300 ease-in-out cursor-pointer ${
                 pathname === "/pages/about"
                   ? "text-emerald-700 font-bold"
                   : "text-gray-700 hover:text-emerald-700"
@@ -128,7 +126,7 @@ export const HomeNavbar = () => {
             <Link
               href="/pages/motivation"
               onClick={() => setMenuOpen(false)}
-              className={`text-md transition-colors duration-500 ease-in-out ${
+              className={`text-md transition-colors duration-300 ease-in-out cursor-pointer ${
                 pathname === "/pages/motivation"
                   ? "text-emerald-700 font-bold"
                   : "text-gray-700 hover:text-emerald-700"
@@ -140,7 +138,7 @@ export const HomeNavbar = () => {
             <Link
               href="/pages/faqs"
               onClick={() => setMenuOpen(false)}
-              className={`text-md transition-colors duration-500 ease-in-out ${
+              className={`text-md transition-colors duration-300 ease-in-out cursor-pointer ${
                 pathname === "/pages/faqs"
                   ? "text-emerald-700 font-bold"
                   : "text-gray-700 hover:text-emerald-700"
