@@ -242,7 +242,7 @@ const Page = () => {
               `<img src="${dataUrl}" style="width:100%;" />`
             );
           } else {
-            alert("Please allow pop-ups to download your photo.");
+            alert("Please allow pop-ups to download your photo or else use web Chrome");
           }
         } else {
           // For Chrome, Android, Edge, etc.
