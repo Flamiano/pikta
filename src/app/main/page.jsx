@@ -822,8 +822,14 @@ const Page = () => {
                 <div className="flex justify-center mb-4">
                   <div className="w-16 h-5 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-md">
                     <div
-                      className="text-sm font-extrabold tracking-wide leading-none text-center"
-                      style={{ color: "#10b981" }}
+                      style={{
+                        color: "#10b981",
+                        fontSize: "0.875rem",
+                        fontWeight: "800",
+                        letterSpacing: "0.05em",
+                        lineHeight: "1rem",
+                        textAlign: "center",
+                      }}
                     >
                       <span style={{ color: "#10b981" }}>P</span>
                       <span style={{ color: "#1f2937" }}>ik</span>
@@ -844,6 +850,7 @@ const Page = () => {
                 >
                   {images.map((img, index) => (
                     <img
+                      crossOrigin="anonymous"
                       key={index}
                       src={img.src}
                       alt={`Photo ${index + 1}`}
