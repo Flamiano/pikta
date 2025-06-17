@@ -1,22 +1,40 @@
+"use client";
+
 import React from "react";
 import { FaFacebookF, FaGithub } from "react-icons/fa";
+import { motion } from "framer-motion";
 
 export const Footer = () => {
+  const fadeUp = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8 } },
+  };
+
   return (
-    <footer className="hidden lg:block bg-emerald-600 text-white font-poppins">
+    <motion.footer
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true }}
+      className="block bg-emerald-600 text-white font-poppins"
+    >
       <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Left: Brand */}
-        <div className="text-lg font-semibold">Piktà</div>
+        <motion.div
+          variants={fadeUp}
+          className="hidden lg:block text-lg font-semibold"
+        >
+          Piktà
+        </motion.div>
 
         {/* Center: Copyright */}
-        <div className="text-sm text-center">
+        <motion.div variants={fadeUp} className="text-sm text-center">
           &copy; {new Date().getFullYear()} All rights reserved.
-        </div>
+        </motion.div>
 
         {/* Right: Social Icons */}
-        <div className="flex gap-4">
+        <motion.div variants={fadeUp} className="flex gap-4">
           <a
-            href="https://github.com"
+            href="https://github.com/Flamiano/pikta"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-gray-200 transition"
@@ -24,15 +42,15 @@ export const Footer = () => {
             <FaGithub size={18} />
           </a>
           <a
-            href="https://facebook.com"
+            href="https://web.facebook.com/roel.flamiano.2025/about"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-gray-200 transition"
           >
             <FaFacebookF size={18} />
           </a>
-        </div>
+        </motion.div>
       </div>
-    </footer>
+    </motion.footer>
   );
 };

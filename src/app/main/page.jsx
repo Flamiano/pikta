@@ -15,6 +15,7 @@ import {
 
 import "../globals.css";
 import domtoimage from "dom-to-image";
+import { motion } from "framer-motion";
 
 const Page = () => {
   // STEP 1: Onboarding and Setup
@@ -52,18 +53,63 @@ const Page = () => {
 
   const photoStripRef = useRef(null);
 
-  // Flip camera
-  const flipCamera = () => {
+  const flipCamera = async () => {
     const newMode = facingMode === "user" ? "environment" : "user";
     setFacingMode(newMode);
 
-    navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: newMode } })
-      .then((newStream) => {
-        if (videoRef.current) videoRef.current.srcObject = newStream;
-        setStream(newStream);
-      })
-      .catch((err) => console.error("Camera flip error:", err));
+    try {
+      // Stop current stream if any
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+
+      // Try getting a new stream by facingMode
+      const constraints = {
+        video: {
+          facingMode: { exact: newMode }, // try forcing mode
+        },
+        audio: false,
+      };
+
+      let newStream = null;
+
+      try {
+        newStream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err) {
+        console.warn("facingMode failed, falling back to deviceId...", err);
+
+        // Fallback: manually find the camera
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(
+          (device) => device.kind === "videoinput"
+        );
+
+        const targetDevice = videoDevices.find((device) =>
+          newMode === "environment"
+            ? device.label.toLowerCase().includes("back")
+            : device.label.toLowerCase().includes("front")
+        );
+
+        if (targetDevice) {
+          newStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              deviceId: targetDevice.deviceId,
+            },
+          });
+        } else {
+          throw new Error("Target camera not found");
+        }
+      }
+
+      // Set the new stream to the video element
+      if (videoRef.current) {
+        videoRef.current.srcObject = newStream;
+      }
+
+      setStream(newStream);
+    } catch (err) {
+      console.error("Camera flip failed:", err);
+    }
   };
 
   // Load camera on step 2
@@ -75,15 +121,13 @@ const Page = () => {
           setStream(mediaStream);
           if (videoRef.current) {
             videoRef.current.srcObject = mediaStream;
-            videoRef.current.play();
           }
         })
         .catch((err) => {
-          console.error("Camera error:", err);
-          alert("Unable to access camera. Please check permissions.");
+          console.error("Failed to access camera:", err);
         });
     }
-  }, [step, stream, facingMode]);
+  }, [step, facingMode, stream]);
 
   // Countdown
   useEffect(() => {
@@ -118,6 +162,14 @@ const Page = () => {
     // Manual or first auto trigger
     setCountdown(timer);
   };
+
+  // Stop Camera on Step = 3
+  useEffect(() => {
+    if (step === 3 && stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      setStream(null); // Release the stream
+    }
+  }, [step, stream]);
 
   // Picture logic
   const takePicture = () => {
@@ -174,9 +226,30 @@ const Page = () => {
       });
   };
 
+  // Animations
+  const fadeUp = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8 } },
+  };
+
+  const fadeLeft = {
+    hidden: { opacity: 0, x: -50 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.8 } },
+  };
+
+  const fadeRight = {
+    hidden: { opacity: 0, x: 50 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.8 } },
+  };
+
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col items-center px-4">
-      <header className="py-6 text-center">
+      <motion.header
+        className="py-6 text-center"
+        initial={{ opacity: 0, y: -30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
         <h1 className="text-6xl font-extrabold tracking-widest">
           <span className="text-emerald-700">P</span>ik
           <span className="text-emerald-700">T</span>à
@@ -184,113 +257,202 @@ const Page = () => {
         <p className="text-sm mt-2 text-gray-600 tracking-widest">
           capture your moment
         </p>
-      </header>
+      </motion.header>
 
       <main className="flex-1 w-full flex flex-col items-center justify-center space-y-6">
         {step === 0 && (
-          <div className="max-w-2xl text-center space-y-12">
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-800">
-                Before You Begin
-              </h2>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                By using <span className="font-semibold">Piktà</span>, you agree
-                to allow temporary access to your device's camera to capture
-                photo booth-style pictures. Your images will be processed and
-                displayed directly within this application and will not be
-                transmitted to external servers unless explicitly saved or
-                shared by you.
-              </p>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                We respect your privacy. No biometric data or personal
-                information is collected. All captured content remains on your
-                device unless you choose to export it. For more details, please
-                read our full{" "}
-                <span className="underline cursor-pointer text-emerald-700 hover:text-emerald-900">
+          <motion.div
+            className="w-full max-w-6xl mx-auto text-center space-y-6"
+            initial="hidden"
+            animate="visible"
+            variants={fadeUp}
+          >
+            {/* Title */}
+            <motion.h2
+              className="text-2xl font-bold text-gray-800 mb-[5px] mt-[-17px]"
+              variants={fadeLeft}
+            >
+              Before You Begin
+            </motion.h2>
+
+            {/* Scrollable Full Width Box */}
+            <motion.div
+              className="bg-white border border-gray-300 rounded-lg shadow p-6 max-h-[32rem] overflow-y-auto text-left space-y-5 text-sm text-gray-700 w-full"
+              variants={fadeRight}
+            >
+              {/* About Piktà */}
+              <div>
+                <h3 className="text-lg font-bold text-emerald-700">
+                  About Piktà
+                </h3>
+                <p>
+                  <span className="font-semibold">Piktà</span> is a digital
+                  photo booth web application designed and developed by{" "}
+                  <span className="font-semibold">John Roel R. Flamiano</span>,
+                  a BSIT student who passionately built this tool to bring
+                  people together through fun and technology.
+                </p>
+                <p>
+                  Inspired by his classmates’ constant request for a modern and
+                  touchless photobooth experience during school events and group
+                  activities, and the rise of short-form content on platforms
+                  like TikTok, Roel envisioned a platform where users could take
+                  multiple pictures, apply effects, customize frames, and
+                  download a stylish photo strip — all without needing any
+                  third-party installations.
+                </p>
+                <p>
+                  One of the biggest motivations behind this project was his
+                  girlfriend, who supported the idea of creating something
+                  creative, functional, and easy to use — something that could
+                  be used during birthdays, celebrations, or just moments worth
+                  capturing.
+                </p>
+                <p>
+                  Piktà is not just a tool — it's a project of passion. It’s
+                  about preserving moments, sharing joy, and expressing
+                  personality in every captured photo.
+                </p>
+              </div>
+
+              {/* Privacy Policy */}
+              <div>
+                <h3 className="text-lg font-bold text-emerald-700">
                   Privacy Policy
-                </span>{" "}
-                and{" "}
-                <span className="underline cursor-pointer text-emerald-700 hover:text-emerald-900">
+                </h3>
+                <p>
+                  We take your privacy seriously. When using Piktà, your camera
+                  feed stays entirely on your device. We do not upload, share,
+                  store, or analyze your pictures.
+                </p>
+                <p>
+                  Piktà does not collect biometric data or personal identifiers.
+                  No cookies, tracking tools, or ads. Once your session ends,
+                  your images and settings are lost unless you choose to
+                  download them.
+                </p>
+                <p>
+                  You upload content at your own discretion. Always ensure you
+                  use the application in a private and secure environment.
+                </p>
+              </div>
+
+              {/* Terms of Service */}
+              <div>
+                <h3 className="text-lg font-bold text-emerald-700">
                   Terms of Service
-                </span>
-                .
-              </p>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                By checking the box below and clicking "Allow Camera Access",
-                you acknowledge that you have read and agree to our legal terms,
-                and consent to the use of your camera for photo capture
-                purposes.
-              </p>
-            </div>
+                </h3>
+                <p>
+                  By using Piktà, you agree to use it only for personal,
+                  educational, or non-commercial purposes.
+                </p>
+                <p>
+                  The app is provided as-is with no guarantee of availability.
+                </p>
+                <p>
+                  John Roel R. Flamiano retains all rights to the source code
+                  and design. Unauthorized copying, selling, or repackaging is
+                  prohibited.
+                </p>
+                <p>
+                  You acknowledge responsibility for the content you create and
+                  download using Piktà.
+                </p>
+              </div>
 
-            {/* Checkbox */}
-            <div className="flex items-center justify-center gap-3">
-              <input
-                type="checkbox"
-                id="privacyConsent"
-                className="w-4 h-4 border-gray-300 rounded cursor-pointer"
-                checked={consentChecked}
-                onChange={(e) => setConsentChecked(e.target.checked)}
-                required
-              />
-              <label htmlFor="privacyConsent" className="text-sm text-gray-700">
-                I agree to the Privacy and Legal Terms.
-              </label>
-            </div>
+              {/* Consent Checkbox */}
+              <div className="flex items-start gap-2 pt-4 border-t border-gray-200">
+                <input
+                  type="checkbox"
+                  id="privacyConsent"
+                  className="mt-1 w-4 h-4 border-gray-300 rounded cursor-pointer"
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                />
+                <label htmlFor="privacyConsent" className="text-sm">
+                  I have read and agree to the Privacy Policy and Terms of
+                  Service, and understand that this is a locally run photobooth
+                  app created by John Roel R. Flamiano.
+                </label>
+              </div>
+            </motion.div>
 
-            {/* Allow Camera Access Button */}
-            <div className="flex items-center justify-center">
+            {/* Allow Camera Button */}
+            <motion.div
+              className="flex justify-center items-center"
+              variants={fadeUp}
+            >
               <button
                 onClick={() => consentChecked && setStep(1)}
                 disabled={!consentChecked}
-                className={`border px-8 py-3 rounded-xl text-lg shadow-md flex items-center gap-2 cursor-pointer transition mb-10 lg:mb-0 ${
+                className={`border px-8 py-3 rounded-xl text-lg shadow-md flex items-center gap-2 transition duration-300 mb-10 ${
                   consentChecked
-                    ? "border-emerald-800 text-emerald-800 hover:bg-emerald-800 hover:text-white"
+                    ? "border-emerald-800 text-emerald-800 hover:bg-emerald-800 hover:text-white cursor-pointer"
                     : "border-gray-400 text-gray-400 cursor-not-allowed"
                 }`}
               >
                 <Camera className="w-5 h-5" />
                 Allow Camera Access
               </button>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
 
         {step === 1 && (
-          <div className="w-full max-w-xl bg-emerald-50/30 border border-emerald-300 p-8 rounded-3xl shadow-lg text-center space-y-6">
+          <motion.div
+            className="w-full max-w-xl mx-auto bg-emerald-50/30 border border-emerald-300 p-6 sm:p-8 rounded-3xl shadow-lg text-center space-y-6"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            {/* Title and Description */}
             <div className="flex flex-col items-center space-y-2">
-              <Camera className="w-12 h-12 text-emerald-700 animate-pulse" />
-              <h2 className="text-3xl font-bold text-emerald-900 tracking-wide">
+              <Camera className="w-10 h-10 sm:w-12 sm:h-12 text-emerald-700 animate-pulse" />
+              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-900 tracking-wide">
                 Choose Number of Photos
               </h2>
-              <p className="text-sm text-gray-600 max-w-md">
+              <p className="text-sm sm:text-base text-gray-600 max-w-md">
                 Get ready for your photo shoot! Pick how many photos you’d like
                 to take — we’ll handle the countdown and effects after.
               </p>
             </div>
 
-            <div className="flex gap-4 justify-center flex-wrap">
+            {/* Buttons */}
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
               {[2, 4, 6, 8, 12].map((count) => (
-                <button
+                <motion.button
                   key={count}
                   onClick={() => {
                     setPictureCount(count);
                     setImages([]);
-                    setStep(2); // go to camera step
+                    setStep(2);
                   }}
-                  className="bg-white border-2 border-emerald-700 text-emerald-800 hover:bg-emerald-700 hover:text-white px-6 py-3 rounded-2xl text-lg font-semibold shadow-md transition duration-300 ease-in-out cursor-pointer"
+                  className="bg-white border-2 border-emerald-700 text-emerald-800 hover:bg-emerald-700 hover:text-white px-4 py-2 sm:px-6 sm:py-3 rounded-2xl text-sm sm:text-lg font-semibold shadow-md transition duration-300 ease-in-out cursor-pointer"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, delay: count * 0.05 }}
                 >
                   {count} {count === 1 ? "photo" : "photos"}
-                </button>
+                </motion.button>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {step === 2 && (
-          <div className="w-full max-w-7xl bg-white rounded-3xl shadow-lg border p-6 flex flex-col lg:flex-row gap-6 mb-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="w-full max-w-7xl bg-white rounded-3xl shadow-lg border p-6 flex flex-col lg:flex-row gap-6 mb-10"
+          >
             {/* LEFT PANEL - CAMERA + CONTROLS BELOW */}
-            <div className="flex flex-col items-center w-full max-w-md space-y-4">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              className="flex flex-col items-center w-full max-w-md space-y-4"
+            >
               {/* STEP 1: Camera Preview */}
               <div className="relative w-full group">
                 <video
@@ -298,25 +460,22 @@ const Page = () => {
                   autoPlay
                   playsInline
                   className={`rounded-xl border-4 w-full h-auto shadow transition-all duration-300 transform
-                  ${
-                    images.length >= pictureCount
-                      ? "border-green-500"
-                      : "border-gray-300"
-                  }
-                  ${videoStyles[selectedEffect]}
-                  ${facingMode === "user" ? "-scale-x-100" : ""}`}
+            ${
+              images.length >= pictureCount
+                ? "border-green-500"
+                : "border-gray-300"
+            }
+            ${videoStyles[selectedEffect]}
+            ${facingMode === "user" ? "-scale-x-100" : ""}`}
                 />
-
-                {/* Flip Camera Button */}
                 <button
                   onClick={flipCamera}
                   className="absolute top-2 right-2 p-2 rounded-full shadow-md bg-white/80 hover:bg-white transition
-                      opacity-100 md:opacity-0 md:group-hover:opacity-100 pointer-events-auto"
+            opacity-100 md:opacity-0 md:group-hover:opacity-100 pointer-events-auto"
                   title="Flip Camera"
                 >
                   <Undo2 size={20} className="text-gray-800" />
                 </button>
-
                 {countdown > 0 && (
                   <div
                     className="absolute inset-0 flex items-center justify-center pointer-events-none"
@@ -346,7 +505,7 @@ const Page = () => {
                       key={t}
                       onClick={() => {
                         setTimer(t);
-                        if (t === 0) setAutoCapture(false); // Reset auto if timer is none
+                        if (t === 0) setAutoCapture(false);
                       }}
                       className={`px-3 py-1 rounded-full border transition text-sm cursor-pointer ${
                         timer === t
@@ -403,7 +562,6 @@ const Page = () => {
               </div>
 
               {/* STEP 5: Capture Button */}
-              {/* Capture Button */}
               <button
                 onClick={startTimerCapture}
                 disabled={
@@ -431,10 +589,15 @@ const Page = () => {
                 {images.length} / {pictureCount} photo
                 {pictureCount > 1 ? "s" : ""}
               </p>
-            </div>
+            </motion.div>
 
             {/* RIGHT PANEL - DISPLAY OUTPUT */}
-            <div className="flex flex-col w-full items-start">
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              className="flex flex-col w-full items-start"
+            >
               <h2 className="text-1xl font-extrabold mb-4 text-gray-800 flex items-center gap-2">
                 <Camera size={25} className="text-emerald-700" />
                 <span>
@@ -472,16 +635,23 @@ const Page = () => {
                   </div>
                 )}
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
 
         {step === 3 && (
-          <div className="w-full max-w-7xl mx-auto bg-white rounded-3xl shadow-lg border p-6 flex flex-col lg:flex-row gap-6 mb-10">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="w-full max-w-7xl mx-auto bg-white rounded-3xl shadow-lg border p-4 sm:p-6 flex flex-col lg:flex-row gap-6 mb-10"
+          >
             {/* LEFT SIDE - CUSTOMIZATION CONTROLS */}
-            <div className="flex flex-col w-full max-w-md gap-4">
-              <h2 className="text-2xl font-extrabold text-gray-800 mb-2 text-center">
-                Customize Your Photos
+            <div className="flex flex-col w-full lg:max-w-md gap-4">
+              <h2 className="text-2xl lg:text-3xl font-extrabold mb-4 text-center">
+                <span className="text-emerald-600">C</span>us
+                <span className="text-emerald-600">T</span>omiza
+                <span className="text-emerald-600">T</span>ion
               </h2>
 
               {/* Frame Style Picker */}
@@ -489,7 +659,7 @@ const Page = () => {
                 <label className="block text-sm font-bold text-gray-700 mb-3">
                   Frame Style
                 </label>
-                <div className="flex gap-4">
+                <div className="flex flex-wrap gap-4">
                   {[
                     { label: "Classic", value: "rounded-md" },
                     { label: "Round", value: "rounded-3xl" },
@@ -517,12 +687,12 @@ const Page = () => {
                 </div>
               </div>
 
+              {/* Frame Color Picker */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
                   Frame Color
                 </label>
 
-                {/* Preset Colors */}
                 <div className="flex gap-2 flex-wrap items-center mb-3">
                   {["#000000", "#ffffff", "#10b981", "#ef4444", "#3b82f6"].map(
                     (color) => (
@@ -540,7 +710,6 @@ const Page = () => {
                   )}
                 </div>
 
-                {/* Custom Color Button */}
                 <div className="flex">
                   <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 cursor-pointer shadow-sm hover:bg-gray-100 transition">
                     <Palette size={18} className="text-gray-700" />
@@ -561,7 +730,7 @@ const Page = () => {
                 </div>
               </div>
 
-              {/* Add Message Toggle */}
+              {/* Message Toggle */}
               <div className="flex justify-between items-center">
                 <span className="text-sm font-bold text-gray-700">
                   Add Message
@@ -604,14 +773,14 @@ const Page = () => {
                 </label>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-4 mt-4">
+              {/* Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 mt-4 font-bold">
                 <button
                   onClick={handleDownload}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg shadow hover:bg-emerald-700 cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-emerald-700 text-emerald-800 hover:bg-emerald-700 hover:text-white rounded-2xl text-sm sm:text-lg font-semibold shadow-md transition duration-300 ease-in-out cursor-pointer"
                 >
                   <DownloadIcon size={18} />
-                  Download Photostrip
+                  Download
                 </button>
 
                 <button
@@ -619,7 +788,7 @@ const Page = () => {
                     setImages([]);
                     setStep(2);
                   }}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg shadow hover:bg-gray-600 cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-gray-600 text-gray-800 hover:bg-gray-700 hover:text-white rounded-2xl text-sm sm:text-lg font-semibold shadow-md transition duration-300 ease-in-out cursor-pointer"
                 >
                   <RefreshCcwIcon size={18} />
                   Retake
@@ -629,7 +798,7 @@ const Page = () => {
 
             {/* RIGHT SIDE - FINAL PHOTO STRIP FRAME */}
             <div className="flex-1 flex flex-col items-center">
-              <h2 className="text-2xl font-extrabold mb-4">
+              <h2 className="text-2xl font-extrabold mb-4 text-center">
                 <span className="text-emerald-600">Y</span>
                 <span className="text-gray-800">our </span>
                 <span className="text-emerald-600">P</span>
@@ -646,30 +815,30 @@ const Page = () => {
                   backgroundColor: frameColor,
                   padding: "16px",
                   width: "fit-content",
+                  maxWidth: "100%",
                 }}
               >
-                {/* Top Text - PikTa */}
+                {/* PikTa Label */}
                 <div className="flex justify-center mb-4">
                   <div className="w-16 h-5 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-md">
                     <div
                       className="text-sm font-extrabold tracking-wide leading-none text-center"
-                      style={{ color: "#10b981" }} // Optional overall color
+                      style={{ color: "#10b981" }}
                     >
                       <span style={{ color: "#10b981" }}>P</span>
-                      <span style={{ color: "#1f2937" /* gray-800 */ }}>
-                        ik
-                      </span>
+                      <span style={{ color: "#1f2937" }}>ik</span>
                       <span style={{ color: "#10b981" }}>T</span>
                       <span style={{ color: "#1f2937" }}>à</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Image Grid */}
+                {/* Images */}
                 <div
                   className="grid grid-cols-2 gap-2 justify-center items-center"
                   style={{
-                    width: "300px",
+                    width: "100%",
+                    maxWidth: "300px",
                     margin: "auto",
                   }}
                 >
@@ -687,7 +856,7 @@ const Page = () => {
                   ))}
                 </div>
 
-                {/* Bottom Text */}
+                {/* Bottom Message */}
                 <div className="text-white text-center text-xs py-3 space-y-1">
                   {showMessage && <div>{customMessage}</div>}
                   {showDate && (
@@ -698,7 +867,7 @@ const Page = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
       </main>
     </div>
