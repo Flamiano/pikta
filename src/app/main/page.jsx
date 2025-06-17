@@ -15,7 +15,7 @@ import {
 
 import "../globals.css";
 //import domtoimage from "dom-to-image";
-import { toPng } from "html-to-image";
+import { toPng, toCanvas } from "html-to-image";
 import { motion } from "framer-motion";
 
 const Page = () => {
@@ -211,29 +211,50 @@ const Page = () => {
   };
 
   // Download handler
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!photoStripRef.current) return;
 
-    toPng(photoStripRef.current, {
-      cacheBust: true,
-      pixelRatio: 3, // 2 or 3 makes it retina-quality
-      style: {
-        transform: "scale(1)", // No scale distortion
-        transformOrigin: "top left",
-      },
-      filter: (node) => true, // Avoid filtering out elements
-    })
-      .then((dataUrl) => {
-        const link = document.createElement("a");
-        link.download = "PikTà.png";
-        link.href = dataUrl;
-        link.click();
-      })
-      .catch((error) => {
-        console.error("Failed to generate image:", error);
+    try {
+      // Render to canvas
+      const canvas = await toCanvas(photoStripRef.current, {
+        cacheBust: true,
+        filter: (node) => true,
+        style: {
+          transform: "scale(1)",
+          transformOrigin: "top left",
+        },
+        // We'll manually scale for quality
+        width: photoStripRef.current.offsetWidth * 2,
+        height: photoStripRef.current.offsetHeight * 2,
       });
-  };
 
+      // Set proper size for HD
+      const context = canvas.getContext("2d");
+      if (context) {
+        context.scale(2, 2); // upscale drawing to retina
+      }
+
+      // Convert canvas to image
+      const dataUrl = canvas.toDataURL("image/png", 1.0);
+
+      // Trigger download
+      const link = document.createElement("a");
+      link.download = "PikTà.png";
+      link.href = dataUrl;
+
+      // For iOS Safari (doesn't support programmatic click reliably)
+      if (
+        navigator.userAgent.includes("Safari") &&
+        !navigator.userAgent.includes("Chrome")
+      ) {
+        window.open(dataUrl, "_blank");
+      } else {
+        link.click();
+      }
+    } catch (err) {
+      console.error("Image generation failed:", err);
+    }
+  };
   // Animations
   const fadeUp = {
     hidden: { opacity: 0, y: 30 },
