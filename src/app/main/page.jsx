@@ -215,7 +215,7 @@ const Page = () => {
     if (!photoStripRef.current) return;
 
     const node = photoStripRef.current;
-    const scale = 2; // Safest upscale factor for iOS + Android
+    const scale = 2; // or 3 for higher quality (but 2 is safer for iOS)
 
     toPng(node, {
       cacheBust: true,
@@ -227,30 +227,20 @@ const Page = () => {
         width: `${node.offsetWidth}px`,
         height: `${node.offsetHeight}px`,
       },
-      filter: () => true,
+      filter: (node) => true,
     })
       .then((dataUrl) => {
-        const fileName = "PikTà.png";
+        const link = document.createElement("a");
+        link.download = "PikTà.png";
+        link.href = dataUrl;
 
-        // iOS Safari download workaround
-        const isIOS =
-          /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-        if (isIOS) {
-          // Open in new tab for user to long-press & save
-          const newWindow = window.open();
-          if (newWindow) {
-            newWindow.document.write(
-              `<img src="${dataUrl}" alt="PikTà" style="width:100%;"/>`
-            );
-          } else {
-            alert("Please allow popups for this site to download your photo.");
-          }
+        // iOS Safari fallback
+        if (
+          navigator.userAgent.includes("Safari") &&
+          !navigator.userAgent.includes("Chrome")
+        ) {
+          window.open(dataUrl, "_blank");
         } else {
-          // For Android and other browsers
-          const link = document.createElement("a");
-          link.download = fileName;
-          link.href = dataUrl;
           link.click();
         }
       })
