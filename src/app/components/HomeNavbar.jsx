@@ -91,7 +91,7 @@ export const HomeNavbar = () => {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 220, opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="fixed top-13 right-0 w-80 bg-white shadow-lg rounded-none lg:rounded-l-3xl p-6 z-40 flex flex-col gap-4 will-change-transform"
+            className="fixed top-13 right-0 w-full lg:w-80 bg-white shadow-lg rounded-none lg:rounded-l-3xl p-6 z-40 flex flex-col gap-4 will-change-transform"
           >
             {/* Header Row: Title + Close */}
             <div className="flex justify-between items-center mb-2">
