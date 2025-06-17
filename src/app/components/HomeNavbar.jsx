@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { FaCameraRetro } from "react-icons/fa";
+import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -17,10 +18,7 @@ export const HomeNavbar = () => {
     "/pages/faqs",
   ].includes(pathname);
 
-  // Toggle menu open/close
-  const toggleMenu = () => {
-    setMenuOpen((prev) => !prev);
-  };
+  const toggleMenu = () => setMenuOpen((prev) => !prev);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -93,12 +91,23 @@ export const HomeNavbar = () => {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 220, opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="fixed top-20 right-0 w-52 bg-white shadow-lg rounded-l-3xl p-6 z-40 flex flex-col gap-4 will-change-transform"
+            className="fixed top-13 right-0 w-80 bg-white shadow-lg rounded-none lg:rounded-l-3xl p-6 z-40 flex flex-col gap-4 will-change-transform"
           >
-            <h2 className="text-lg font-extrabold text-emerald-700 mb-2">
-              Navigate
-            </h2>
+            {/* Header Row: Title + Close */}
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-lg font-extrabold text-emerald-700">
+                Navigate
+              </h2>
+              <button
+                onClick={() => setMenuOpen(false)}
+                className="text-gray-400 hover:text-red-500 transition cursor-pointer"
+                aria-label="Close Menu"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
+            {/* Nav Links */}
             <Link
               href="/"
               onClick={() => setMenuOpen(false)}
