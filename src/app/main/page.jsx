@@ -216,10 +216,12 @@ const Page = () => {
 
     toPng(photoStripRef.current, {
       cacheBust: true,
-      filter: (node) => {
-        // You can skip elements with unsafe styles
-        return true;
+      pixelRatio: 3, // 2 or 3 makes it retina-quality
+      style: {
+        transform: "scale(1)", // No scale distortion
+        transformOrigin: "top left",
       },
+      filter: (node) => true, // Avoid filtering out elements
     })
       .then((dataUrl) => {
         const link = document.createElement("a");
@@ -227,8 +229,8 @@ const Page = () => {
         link.href = dataUrl;
         link.click();
       })
-      .catch((err) => {
-        console.error("Image generation error:", err);
+      .catch((error) => {
+        console.error("Failed to generate image:", error);
       });
   };
 
