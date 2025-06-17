@@ -277,7 +277,7 @@ const Page = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex flex-col items-center px-4">
+    <div className="min-h-screen bg-white text-gray-900 flex flex-col items-center px-4 font-serif">
       <motion.header
         className="py-6 text-center"
         initial={{ opacity: 0, y: -30 }}

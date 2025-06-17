@@ -15,9 +15,9 @@ export const Footer = () => {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true }}
-      className="block bg-emerald-600 text-white font-poppins"
+      className="block bg-emerald-600 text-white font-serif"
     >
-      <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-4 ">
         {/* Left: Brand */}
         <motion.div
           variants={fadeUp}

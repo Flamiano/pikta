@@ -2,7 +2,7 @@
 import "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Navbar } from "./components/HomeNavbar";
+import { HomeNavbar } from "./components/HomeNavbar";
 import { Footer } from "./components/Footer";
 import "./globals.css";
 import { motion } from "framer-motion";
@@ -43,8 +43,8 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-gray-800 font-poppins relative overflow-x-hidden">
-      <Navbar />
+    <div className="min-h-screen flex flex-col bg-white text-gray-800 font-poppins relative overflow-x-hidden font-serif">
+      <HomeNavbar />
 
       {/* Countdown Overlay */}
       {showOverlay && (
